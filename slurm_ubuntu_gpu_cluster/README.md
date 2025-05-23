@@ -32,8 +32,12 @@ on master node:
 ssh-keygen
 ssh-copy-id worker_node@222.xx.222.xx
 ```
-# [OPTIONAL] Sync GID/UIDs
-### LDAP Account Manager
+# Sync GID/UIDs
+
+### Create Main User
+Create the main user with the same GID and UID in all nodes. Direct the home path to a shared folder. If not, you can use LDAP instead.
+
+### [OPTIONAL] LDAP Account Manager
 You can follow this [guide](https://computingforgeeks.com/install-and-configure-openldap-server-ubuntu/) to install and configure LDAP Account Manager.  
 
 Additionally, after step one (Set hostname on the server) of the guide in ```/etc/hosts``` after ```<IP> <FQDN>``` add ```<name>``` of the node so it would look like ```111.xx.111.xx masternode.master.local masternode```.  
@@ -42,6 +46,9 @@ Also, on worker_node do the following:
 - set FQDN for the worker_node:
 ```sudo hostnamectl set-hostname workernode.worker.local```
 - add IP, FQDN and name of the workernode ```222.xx.222.xx workernode.worker.local workernode``` and add IP, FQDN and name of the masternode ```111.xx.111.xx masternode.master.local masternode``` in ```etc/hosts```. So in worker_node ```etc/hosts``` you would have both master and worker nodes IPs, FQDNs and names.
+
+
+
 ### Create munge and slurm users:
 Master and Worker nodes:
 ```
