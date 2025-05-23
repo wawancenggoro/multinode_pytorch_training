@@ -30,13 +30,11 @@ echo "MASTER_ADDR="$MASTER_ADDR
 
 source ~/.bashrc
 
-# activate conda
+### activate conda env
 source ~/miniconda3/etc/profile.d/conda.sh
-
 conda activate [YOUR_CONDA_ENV]
 
-# conda activate flat-samples
-
+### run .py file
 srun python train_ddp_test.py
 
 
