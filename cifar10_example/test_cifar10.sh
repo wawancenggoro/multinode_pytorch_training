@@ -35,6 +35,6 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate [YOUR_CONDA_ENV]
 
 ### run .py file
-srun python train_ddp_test.py
+srun python train_ddp_test_cifar10.py
 
 
