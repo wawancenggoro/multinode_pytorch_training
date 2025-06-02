@@ -1,23 +1,25 @@
 # slurm_ubuntu_gpu_cluster
 Guide on how to set up gpu cluster on Ubuntu 22.04 using slurm (with cgroups).
 ### Acknowledgements
-Thanks to nateGeorge for the [guide](https://github.com/nateGeorge/slurm_gpu_ubuntu?tab=readme-ov-file) he wrote. I would highly recommend checking it out first as it is very descriptive.
+This tutorial is based on the repository provided by lopentusska [here](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster). Thanks to nateGeorge for the [guide](https://github.com/nateGeorge/slurm_gpu_ubuntu?tab=readme-ov-file) he wrote. I would highly recommend checking it out first as it is very descriptive.
 # Assumptions:
 - masternode 111.xx.111.xx
-- workernode 222.xx.222.xx
+- workernode1 222.xx.222.xx
+- workernode2 333.xx.333.xx
 - masternode FQDN = masternode.master.local
-- workernode FQDN = workernode.worker.local
+- workernode FQDN = workernode1.worker.local
+- workernode FQDN = workernode2.worker.local
 # Steps:
-- [Install nvidia drivers](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#install-nvidia-drivers)
-- [Set up passwordless ssh](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-passwordless-ssh)
-- [SYNC GID/UIDs](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#sync-giduids)
-- [Synchronize time](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#synchronize-time)
-- [Set up NFS](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-nfs)
-- [Set up MUNGE](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-munge)
-- [Set up DB for Slurm](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-db-for-slurm)
-- [Set up Slurm](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-slurm)
-- [Logs](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster/blob/main/README.md#logs)
-- [Script](https://github.com/lopentusska/slurm_ubuntu_gpu_cluster/blob/main/README.md#script)
+- [Install nvidia drivers](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#install-nvidia-drivers)
+- [Set up passwordless ssh](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-passwordless-ssh)
+- [SYNC GID/UIDs](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#sync-giduids)
+- [Synchronize time](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#synchronize-time)
+- [Set up NFS](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-nfs)
+- [Set up MUNGE](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-munge)
+- [Set up DB for Slurm](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-db-for-slurm)
+- [Set up Slurm](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster?tab=readme-ov-file#set-up-slurm)
+- [Logs](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster/blob/main/README.md#logs)
+- [Script](https://github.com/wawancenggoro/multinode_pytorch_training/slurm_ubuntu_gpu_cluster/blob/main/README.md#script)
 # Install nvidia drivers
 If you need to install nvidia drivers, use this [guide](https://gist.github.com/denguir/b21aa66ae7fb1089655dd9de8351a202#install-nvidia-drivers).
 # Set up passwordless ssh
@@ -30,7 +32,8 @@ sudo ufw allow ssh
 on master node:
 ```
 ssh-keygen
-ssh-copy-id worker_node@222.xx.222.xx
+ssh-copy-id workernode1@222.xx.222.xx
+ssh-copy-id workernode2@333.xx.333.xx
 ```
 # Sync GID/UIDs
 
@@ -45,7 +48,7 @@ Additionally, after step one (Set hostname on the server) of the guide in ```/et
 Also, on worker_node do the following:
 - set FQDN for the worker_node:
 ```sudo hostnamectl set-hostname workernode.worker.local```
-- add IP, FQDN and name of the workernode ```222.xx.222.xx workernode.worker.local workernode``` and add IP, FQDN and name of the masternode ```111.xx.111.xx masternode.master.local masternode``` in ```etc/hosts```. So in worker_node ```etc/hosts``` you would have both master and worker nodes IPs, FQDNs and names.
+- add IP, FQDN and name of the workernode, e.g. ```222.xx.222.xx workernode1.worker.local workernode1``` and add IP, FQDN and name of the masternode ```111.xx.111.xx masternode.master.local masternode``` in ```etc/hosts```. So in worker_node ```etc/hosts``` you would have both master and worker nodes IPs, FQDNs and names.
 
 
 
@@ -72,8 +75,10 @@ sudo mkdir /storage -p
 sudo chown master_node:master_node /storage/
 sudo vim /etc/exports
 /storage 222.xx.222.xx(rw,sync,no_root_squash,no_subtree_check)
+/storage 333.xx.333.xx(rw,sync,no_root_squash,no_subtree_check)
 sudo systemctl restart nfs-kernel-server
 sudo ufw allow from 222.xx.222.xx to any port nfs
+sudo ufw allow from 333.xx.333.xx to any port nfs
 ```
 Worker node:
 ```
@@ -218,17 +223,21 @@ In ```/storage/slurm_ubuntu_gpu_cluster/configs_services/slurm.conf``` change:
 Use ```sudo slurmd -C``` to print out machine specs. You should copy specs of all machines in slurm.conf file and modify it. To modify it, we need to add the number of GPUs we have in the system.
 example of how it should look in your config file:
 ```
-NodeName=masternode NodeAddr=111.xx.111.xx Gres=gpu:1 CPUs=16 Boards=1 SocketsPerBoard=1 CoresPerSocket=8 ThreadsPerCore=2 RealMemory=63502
+NodeName=masternode NodeAddr=111.xx.111.xx Gres=gpu:8 CPUs=16 Boards=1 SocketsPerBoard=1 CoresPerSocket=8 ThreadsPerCore=2 RealMemory=63502
 ```
 After you are done with ```slurm.conf``` editing:
 ```
 sudo cp /storage/slurm_ubuntu_gpu_cluster/configs_services/slurm.conf /storage/
 ```
 
-Edit ```/storage/slurm_ubuntu_gpu_cluster/configs_services/gres.conf``` file.
+Edit ```/storage/slurm_ubuntu_gpu_cluster/configs_services/gres.conf``` file. For a machine with 2 GPUs:
 ```
 NodeName=masternode Name=gpu File=/dev/nvidia0
-NodeName=workernode Name=gpu File=/dev/nvidia0
+NodeName=masternode Name=gpu File=/dev/nvidia1
+NodeName=workernode1 Name=gpu File=/dev/nvidia0
+NodeName=workernode1 Name=gpu File=/dev/nvidia1
+NodeName=workernode2 Name=gpu File=/dev/nvidia0
+NodeName=workernode2 Name=gpu File=/dev/nvidia1
 ```
 You can use ```nvidia-smi``` to find out the number you should use instead of ```0``` in ```nvidia0```. You will find it to the left of the GPU name.  
 
